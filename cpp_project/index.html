@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Currency Converter</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap');
+
+        :root {
+            --bg: #e7eaabf6;
+            --bg-deep: #f3f1d0f4;
+            --panel: rgba(4, 8, 31, 0.86);
+            --panel-strong: rgba(141, 14, 225, 0.96);
+            --line: rgba(83, 53, 22, 0.14);
+            --text: #23160b;
+            --muted: #6f5a45;
+            --accent: #c05621;
+            --accent-2: #b208e6;
+            --accent-3: #080123;
+            --success: #b208e6;
+            --danger: #b23a2e;
+            --shadow: 0 24px 80px rgba(77, 49, 23, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(241, 178, 74, 0.28), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(29, 111, 109, 0.2), transparent 28%),
+                linear-gradient(135deg, #1c06ea 0%, #560ae4 45%, #ddc4a0 100%);
+            overflow-x: hidden;
+        }
+
+        .scene {
+            position: relative;
+            min-height: 100vh;
+            padding: 48px 20px;
+            display: grid;
+            place-items: center;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 999px;
+            filter: blur(10px);
+            opacity: 0.75;
+            animation: drift 14s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .orb-a {
+            width: 280px;
+            height: 280px;
+            top: 24px;
+            left: -70px;
+            background: rgba(240, 139, 61, 0.25);
+        }
+
+        .orb-b {
+            width: 220px;
+            height: 220px;
+            bottom: 34px;
+            right: -40px;
+            background: rgba(20, 108, 106, 0.22);
+            animation-delay: -5s;
+        }
+
+        .shell {
+            position: relative;
+            width: min(1080px, 100%);
+            display: grid;
+            grid-template-columns: 1.08fr 0.92fr;
+            background: rgba(5, 9, 236, 0.62);
+            border: 1px solid rgba(255, 255, 255, 0.65);
+            border-radius: 30px;
+            backdrop-filter: blur(22px);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .hero,
+        .panel {
+            padding: 40px;
+        }
+
+        .hero {
+            position: relative;
+            background:
+                linear-gradient(180deg, rgba(255, 250, 241, 0.5), rgba(255, 250, 241, 0.12)),
+                linear-gradient(135deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.05));
+            border-right: 1px solid rgba(83, 53, 22, 0.08);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(35, 22, 11, 0.05);
+            color: var(--muted);
+            font-size: 13px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .hero h1 {
+            margin-top: 22px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2.6rem, 5vw, 4.6rem);
+            line-height: 0.95;
+            letter-spacing: -0.05em;
+            max-width: 7ch;
+        }
+
+        .hero p {
+            margin-top: 18px;
+            max-width: 500px;
+            color: var(--muted);
+            font-size: 1.03rem;
+            line-height: 1.7;
+        }
+
+        .hero-grid {
+            margin-top: 32px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .metric {
+            padding: 18px;
+            border-radius: 22px;
+            background: rgba(255, 252, 246, 0.74);
+            border: 1px solid rgba(83, 53, 22, 0.08);
+        }
+
+        .metric strong {
+            display: block;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.6rem;
+            margin-bottom: 6px;
+        }
+
+        .metric span {
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .ticker {
+            margin-top: 22px;
+            padding: 14px 18px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(192, 86, 33, 0.08), rgba(29, 111, 109, 0.1));
+            border: 1px solid rgba(83, 53, 22, 0.08);
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .ticker strong {
+            color: var(--text);
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+            background: linear-gradient(180deg, rgba(255, 249, 240, 0.94), rgba(255, 245, 231, 0.82));
+        }
+
+        .panel-header h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem;
+            letter-spacing: -0.04em;
+        }
+
+        .panel-header p {
+            margin-top: 8px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .converter-form {
+            display: grid;
+            gap: 18px;
+        }
+
+        .field {
+            display: grid;
+            gap: 9px;
+        }
+
+        .field-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.94rem;
+            color: var(--muted);
+        }
+
+        .field-label small {
+            font-size: 0.8rem;
+            color: rgba(111, 90, 69, 0.8);
+        }
+
+        .field-shell {
+            position: relative;
+        }
+
+        input,
+        select,
+        button {
+            font: inherit;
+        }
+
+        input,
+        select {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: var(--panel-strong);
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input {
+            padding: 18px 18px 18px 54px;
+            font-size: 1.55rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+
+        select {
+            padding: 16px 18px;
+            appearance: none;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: rgba(192, 86, 33, 0.55);
+            box-shadow: 0 0 0 4px rgba(192, 86, 33, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .amount-symbol {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(35, 22, 11, 0.45);
+            font-weight: 700;
+            font-size: 1.1rem;
+            pointer-events: none;
+        }
+
+        .currency-row {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 14px;
+            align-items: end;
+        }
+
+        .swap-btn {
+            width: 52px;
+            height: 52px;
+            border: 0;
+            border-radius: 18px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, var(--accent), #d97706);
+            color: #fffdf8;
+            box-shadow: 0 16px 28px rgba(192, 86, 33, 0.24);
+            cursor: pointer;
+            transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
+        }
+
+        .swap-btn:hover {
+            transform: translateY(-2px) rotate(180deg);
+            filter: saturate(1.05);
+            box-shadow: 0 18px 34px rgba(192, 86, 33, 0.32);
+        }
+
+        .swap-btn:active {
+            transform: scale(0.97) rotate(180deg);
+        }
+
+        .quick-picks {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .chip {
+            border: 1px solid rgba(83, 53, 22, 0.12);
+            border-radius: 999px;
+            padding: 10px 14px;
+            background: rgba(255, 251, 245, 0.76);
+            color: var(--text);
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .chip:hover,
+        .chip.is-active {
+            background: rgba(192, 86, 33, 0.1);
+            border-color: rgba(192, 86, 33, 0.28);
+            transform: translateY(-1px);
+        }
+
+        .convert-btn {
+            border: 0;
+            border-radius: 20px;
+            padding: 18px 22px;
+            background: linear-gradient(135deg, var(--accent-2), #2f8f83);
+            color: #fff;
+            font-size: 1.02rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            cursor: pointer;
+            box-shadow: 0 18px 30px rgba(29, 111, 109, 0.24);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        .convert-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 34px rgba(29, 111, 109, 0.28);
+        }
+
+        .convert-btn:active {
+            transform: scale(0.985);
+        }
+
+        .convert-btn:disabled {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
+        .result-container {
+            display: none;
+            padding: 22px;
+            border-radius: 24px;
+            background: linear-gradient(145deg, rgba(33, 143, 98, 0.1), rgba(29, 111, 109, 0.14));
+            border: 1px solid rgba(31, 143, 98, 0.18);
+            animation: riseIn 0.45s ease forwards;
+        }
+
+        .result-label {
+            color: var(--muted);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+
+        .result-text {
+            margin-top: 8px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            line-height: 1;
+            letter-spacing: -0.05em;
+            color: var(--success);
+        }
+
+        .rate-text {
+            margin-top: 10px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .microcopy {
+            color: var(--muted);
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        .status {
+            min-height: 24px;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .status.error {
+            color: var(--danger);
+        }
+
+        .status.success {
+            color: var(--success);
+        }
+
+        .loading {
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255, 255, 255, 0.35);
+            border-top-color: #fff;
+            border-radius: 50%;
+            display: inline-block;
+            animation: spin 0.9s linear infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes riseIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes drift {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-18px) scale(1.05);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .shell {
+                grid-template-columns: 1fr;
+            }
+
+            .hero {
+                border-right: 0;
+                border-bottom: 1px solid rgba(83, 53, 22, 0.08);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .scene {
+                padding: 18px;
+            }
+
+            .hero,
+            .panel {
+                padding: 24px;
+            }
+
+            .hero-grid,
+            .currency-row {
+                grid-template-columns: 1fr;
+            }
+
+            .swap-btn {
+                width: 100%;
+                height: 48px;
+            }
+
+            input {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="scene">
+        <div class="orb orb-a"></div>
+        <div class="orb orb-b"></div>
+
+        <section class="shell">
+            <div class="hero">
+                <div class="eyebrow">
+                    <span>Live via your C++ engine</span>
+                </div>
+                <h1>Convert currencies with a cleaner command deck.</h1>
+                <p>
+                    A refreshed interface for your converter: easier scanning, quicker amount entry, and a stronger result panel,
+                    while keeping the same backend route and all your C or C++ logic untouched.
+                </p>
+
+                <div class="hero-grid">
+                    <div class="metric">
+                        <strong>20</strong>
+                        <span>Supported currencies ready to swap instantly.</span>
+                    </div>
+                    <div class="metric">
+                        <strong>1-click</strong>
+                        <span>Quick amount chips for common checks.</span>
+                    </div>
+                </div>
+
+                <div class="ticker" id="heroTicker">
+                    <strong>Default pair:</strong> USD to INR. Change the pair and amount anytime from the panel.
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Exchange Studio</h2>
+                    
+                </div>
+
+                <div class="converter-form">
+                    <div class="field">
+                        <div class="field-label">
+                            <label for="amount">Amount</label>
+                            <small>Positive values only</small>
+                        </div>
+                        <div class="field-shell">
+                            <span class="amount-symbol">$</span>
+                            <input type="number" id="amount" value="1" min="0" step="any" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="field-label">
+                            <span>Quick amounts</span>
+                            <small>Optional shortcuts</small>
+                        </div>
+                        <div class="quick-picks" id="quickPicks">
+                            <button class="chip is-active" type="button" data-amount="1">1</button>
+                            <button class="chip" type="button" data-amount="10">10</button>
+                            <button class="chip" type="button" data-amount="100">100</button>
+                            <button class="chip" type="button" data-amount="1000">1000</button>
+                        </div>
+                    </div>
+
+                    <div class="currency-row">
+                        <div class="field">
+                            <div class="field-label">
+                                <label for="from">From</label>
+                            </div>
+                            <select id="from"></select>
+                        </div>
+
+                        <button class="swap-btn" id="swapBtn" type="button" title="Swap currencies" aria-label="Swap currencies">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M7 7h11l-3-3"></path>
+                                <path d="M17 17H6l3 3"></path>
+                                <path d="M15 4l3 3-3 3"></path>
+                                <path d="M9 20l-3-3 3-3"></path>
+                            </svg>
+                        </button>
+
+                        <div class="field">
+                            <div class="field-label">
+                                <label for="to">To</label>
+                            </div>
+                            <select id="to"></select>
+                        </div>
+                    </div>
+
+                    <button class="convert-btn" id="convertBtn" type="button">Convert Currency</button>
+
+                    <div class="status" id="statusText" aria-live="polite"></div>
+
+                    <div class="result-container" id="resultContainer">
+                        <div class="result-label">Converted amount</div>
+                        <div class="result-text" id="resultText">0.00</div>
+                        <div class="rate-text" id="summaryText">1 USD = ...</div>
+                    </div>
+
+                    <p class="microcopy">
+                        Tip: the result panel updates after each successful request and the swap button keeps your selected pair intact.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const currencies = [
+            { code: 'USD', name: 'US Dollar' }, { code: 'EUR', name: 'Euro' },
+            { code: 'GBP', name: 'British Pound' }, { code: 'INR', name: 'Indian Rupee' },
+            { code: 'JPY', name: 'Japanese Yen' }, { code: 'AUD', name: 'Australian Dollar' },
+            { code: 'CAD', name: 'Canadian Dollar' }, { code: 'CHF', name: 'Swiss Franc' },
+            { code: 'CNY', name: 'Chinese Yuan' }, { code: 'SEK', name: 'Swedish Krona' },
+            { code: 'NZD', name: 'New Zealand Dollar' }, { code: 'MXN', name: 'Mexican Peso' },
+            { code: 'SGD', name: 'Singapore Dollar' }, { code: 'HKD', name: 'Hong Kong Dollar' },
+            { code: 'NOK', name: 'Norwegian Krone' }, { code: 'KRW', name: 'South Korean Won' },
+            { code: 'TRY', name: 'Turkish Lira' }, { code: 'RUB', name: 'Russian Ruble' },
+            { code: 'BRL', name: 'Brazilian Real' }, { code: 'ZAR', name: 'South African Rand' }
+        ];
+
+        const fromSelect = document.getElementById('from');
+        const toSelect = document.getElementById('to');
+        const swapBtn = document.getElementById('swapBtn');
+        const convertBtn = document.getElementById('convertBtn');
+        const amountInput = document.getElementById('amount');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultText = document.getElementById('resultText');
+        const summaryText = document.getElementById('summaryText');
+        const heroTicker = document.getElementById('heroTicker');
+        const statusText = document.getElementById('statusText');
+        const quickPicks = Array.from(document.querySelectorAll('.chip'));
+
+        function renderCurrencies() {
+            currencies
+                .slice()
+                .sort((a, b) => a.code.localeCompare(b.code))
+                .forEach((currency) => {
+                    const label = `${currency.code} - ${currency.name}`;
+                    fromSelect.add(new Option(label, currency.code));
+                    toSelect.add(new Option(label, currency.code));
+                });
+
+            fromSelect.value = 'USD';
+            toSelect.value = 'INR';
+            updateTicker();
+        }
+
+        function updateTicker() {
+            heroTicker.innerHTML = `<strong>Selected pair:</strong> ${fromSelect.value} to ${toSelect.value}. Use swap for a fast reverse conversion.`;
+        }
+
+        function setStatus(message, type) {
+            statusText.textContent = message || '';
+            statusText.className = 'status';
+            if (type) {
+                statusText.classList.add(type);
+            }
+        }
+
+        function syncQuickPicks() {
+            const currentValue = amountInput.value.trim();
+            quickPicks.forEach((chip) => {
+                chip.classList.toggle('is-active', chip.dataset.amount === currentValue);
+            });
+        }
+
+        function showResult(amount, from, converted, to) {
+            resultContainer.style.display = 'block';
+            resultContainer.style.animation = 'none';
+            void resultContainer.offsetWidth;
+            resultContainer.style.animation = 'riseIn 0.45s ease forwards';
+            summaryText.textContent = `${amount} ${from} converts to`;
+            resultText.textContent = `${converted.toFixed(2)} ${to}`;
+        }
+
+        renderCurrencies();
+        syncQuickPicks();
+
+        quickPicks.forEach((chip) => {
+            chip.addEventListener('click', () => {
+                amountInput.value = chip.dataset.amount;
+                syncQuickPicks();
+                setStatus(`Amount set to ${chip.dataset.amount}.`, 'success');
+            });
+        });
+
+        amountInput.addEventListener('input', () => {
+            syncQuickPicks();
+            setStatus('', '');
+        });
+
+        fromSelect.addEventListener('change', updateTicker);
+        toSelect.addEventListener('change', updateTicker);
+
+        swapBtn.addEventListener('click', () => {
+            const previousFrom = fromSelect.value;
+            fromSelect.value = toSelect.value;
+            toSelect.value = previousFrom;
+            updateTicker();
+            setStatus('Currencies swapped.', 'success');
+        });
+
+        convertBtn.addEventListener('click', async () => {
+            const amount = parseFloat(amountInput.value);
+
+            if (Number.isNaN(amount) || amount <= 0) {
+                setStatus('Please enter a valid amount greater than zero.', 'error');
+                amountInput.focus();
+                return;
+            }
+
+            const from = fromSelect.value;
+            const to = toSelect.value;
+
+            convertBtn.innerHTML = '<span class="loading" aria-hidden="true"></span>';
+            convertBtn.disabled = true;
+            setStatus('Fetching result from your local converter...', '');
+
+            try {
+                const url = `/api/convert?amount=${amount}&from=${from}&to=${to}`;
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error('Server error');
+                }
+
+                const data = await response.json();
+                showResult(amount, from, data.result, to);
+                setStatus(`Conversion complete for ${from} to ${to}.`, 'success');
+            } catch (error) {
+                console.error(error);
+                setStatus('Could not reach the C++ server on port 8080. Start the local server and try again.', 'error');
+            } finally {
+                convertBtn.textContent = 'Convert Currency';
+                convertBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
